@@ -1,0 +1,56 @@
+###
+# Look & feel of the script execution
+# Banner: Display an ACII art banner at the top
+#     null : No banner displayed
+#     random: will change banner layout at each execution of program
+#     <number>: will keep a fix banner cross progam execution (see file banner.py for possible layout)
+# Debug: Level of processing inforamation dislayed during excution
+Console:
+  Banner: "random"      #possible values: null, random, <number>
+  ColoredOutput: true
+  Debug: verbose        # Functionality not yet implemented
+
+###
+# CSV file to be transformed.
+# Provide full location to execute straight forward or empty string or null in order to be prompted during program execution 
+Source:
+  CSVFile: c:\Users\saintph1\OneDrive - OneSpan\My Documents\_Python\CSVHash\test\data\fclab_sample.csv
+  # CSVFile: null
+  CSVSeparator: ;
+
+###
+#  
+Output:
+  CSVLocation: c:\Users\saintph1\OneDrive - OneSpan\My Documents\_Python\CSVHash\test\out            # if not specified (null), Will be same location as CSV input. Note that folder should already exists.
+  CSVSeparator: null           # if not specified (null), Will be same separator as CSV input
+  OverviewFile: false
+  FileNameSeparator: _
+  FileNameTimeStamp: true      # if true, add timestamp of execution at the end of filename
+
+###
+# 
+Transform:
+  Algorithm: blake2s          # possible values: blake2s, blake2b, md5, sha1, sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, sha3_512, length, index (blake2s recommended)
+  Salt: null                  # optional. Specify a string to be used as salt with the algorithm for all the fields you want to provide a hash.
+  KeepOriginalValues: false   # For Debugging purpose. To have 2 column with both original and transformed value.
+  KeepColumnName: true        # when false, will reflect in column names which one has been transformed & using which algorithm.
+  Selection: InclusionList    # possible values : All, ExclusionList, InclusionList, ParameterFile.
+
+###
+#
+SelectionParameters:
+  # used with Scope: IncludeFields - List of Fields Name (from header) that will be hashed, other will keep existing value
+  InclusionList:        
+  - RAW_DATA RELATIONSHIP_REF
+  - RAW_DATA USER_REF
+  # used with Scope: ExcludeFields - List of Fields Name (from header) that will keep value. All others will be hashed
+  ExclusionList:        
+  - RAW_DATA CREATED_DATE
+  - RAW_DATA EVENT_TYPE
+  - RAW_DATA EVENT_TYPE_NAME
+  - RAW_DATA UNIQUE_ID
+  # used with Scope: ParameterFile - Explicit action (hash/keep orignal value) for every field of input file.
+  # IMPORTANT NOTE: If a field name is present on input file but not on parameter file, this field will be dropped from output.
+  ParameterFile:                        
+    CSVFile: C:\Users\saintph1\OneDrive - OneSpan\My Documents\_Python\CSVHash\test\params\fclab_sample_params.csv
+    CSVSeparator: null      # if not specified (null), will be same separator as CSV input

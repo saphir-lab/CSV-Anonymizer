@@ -1,0 +1,18 @@
+0.1 - 25/01/2022: Initial version with
+    - Banner with Ascii art
+    - Json Parameter
+    - Load CSV
+    - Hashing using SHA1 ro reduce size
+    - Keep Missing/NaN values
+    - Print report
+
+
+TODO: 
+1. Add extra Json parameters : 
+    - rename column hashed with which extension ('_HASH')
+    - File Name output : with name extension, with timestamp
+    - Keep Missing value vs Hash missing value ?
+
+3. Add some interaction/confirmation
+4. Loop ?
+5. Collection of files ?
