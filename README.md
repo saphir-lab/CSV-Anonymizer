@@ -40,7 +40,26 @@ In order to do a minimal verification base on the length of the value, extra opt
 
 >**Note**: *parameter 'length' is presented in this script as part of the hash algorithms even if, conceptually, this is not a hash function.*
 
-## Configuration
+## ⚙️ Installation
+
+**Prerequisites**: Use Python 3.x
+
+csv_anonymizer can be installed and setup by running:
+
+```bash
+# For Linux / MacOS
+$ python -m venv .venv              # Create a virtual environment
+$ source .venv/bin/activate         # Activate your virtual environment 
+$ pip install -r requirements.txt   # Install python dependencies
+
+# For Windows
+> python -m venv .venv              # Create a virtual environment
+> .venv\Scripts\Activate.bat        # Activate your virtual environment 
+> pip install -r requirements.txt   # Install python dependencies
+
+```
+
+## 🛠 Configuration
 
 This script accept parameters that you have to specify in a file named '**setting.yaml**' and located on the same directory as the script.
 
@@ -53,12 +72,6 @@ This parameter file contains 5 sections :
 - SelectionParameters: to precise the list of fields from your source file you want to anonymize or exclude from the anonymization process.
 
 >**Note**: *setting.yaml file contains comments. See sample setting file for more information.*
-
-## Prerequisites
-
-- Use Python 3.x
-- Install required python modules using command line (from this directory):
-  - `pip install -r requirements.txt`
 
 ## License
 
