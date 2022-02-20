@@ -1,7 +1,6 @@
 __pycache__/
 **/__pycache__/
-.vscode/
+.*/
 archive/
 env/
 test/
-test_*
