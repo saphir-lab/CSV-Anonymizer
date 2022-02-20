@@ -229,7 +229,7 @@ def get_parameters():
     algorithm = settings.get("Transform", {}).get("Algorithm","blake2s")
     algorithm = "blake2s" if algorithm is None else algorithm.lower()
     salt = settings.get("Transform", {}).get("Salt","")
-    salt = "" if salt is None else salt.lower()
+    salt = "" if salt is None else salt
     keep_original_values = settings.get("Transform", {}).get("KeepOriginalValues", False)
     keep_column_name = settings.get("Transform", {}).get("KeepColumnName", True)
     selection_type = settings.get("Transform", {}).get("Selection","ALL")
