@@ -30,7 +30,7 @@ Instead of removing PII data, you can **anonymize** the PII by using hashing tec
 If the context of your analysis you need to perform some data quality verification, it starts to be difficult to achieve it for PII elements that have been hashed.
 In order to do a minimal verification base on the length of the value, extra option have been added to this script in order to:
 
-- Generate a second file (overview) with some statistics related to original data. This include following statistics **for each column** present in the CSV FIle:
+- Generate a second file (overview) with some statistics related to original data. This includes following statistics **for each column** present in the CSV FIle:
   - Number of values provided (in order to see column with missing values).
   - Number of **unique** values.
   - The minimum length of value
@@ -40,6 +40,8 @@ In order to do a minimal verification base on the length of the value, extra opt
 
 >**Note**: *parameter 'length' is presented in this script as part of the hash algorithms even if, conceptually, this is not a hash function.*
 
+----
+
 ## ⚙️ Installation
 
 **Prerequisites**: Use Python 3.x
@@ -48,15 +50,14 @@ csv_anonymizer can be installed and setup by running:
 
 ```bash
 # For Linux / MacOS
-$ python -m venv .venv              # Create a virtual environment
-$ source .venv/bin/activate         # Activate your virtual environment 
-$ pip install -r requirements.txt   # Install python dependencies
+$ python -m venv .venv                      # Create a virtual environment
+$ source .venv/bin/activate                 # Activate virtual environment 
+(.venv)$ pip install -r requirements.txt    # Install python dependencies in virtual env.
 
 # For Windows
-> python -m venv .venv              # Create a virtual environment
-> .venv\Scripts\Activate.bat        # Activate your virtual environment 
-> pip install -r requirements.txt   # Install python dependencies
-
+> python -m venv .venv                      # Create a virtual environment
+> .venv\Scripts\Activate.bat                # Activate virtual environment 
+(.venv)> pip install -r requirements.txt    # Install python dependencies in virtual env.
 ```
 
 ## 🛠 Configuration
@@ -72,6 +73,40 @@ This parameter file contains 5 sections :
 - SelectionParameters: to precise the list of fields from your source file you want to anonymize or exclude from the anonymization process.
 
 >**Note**: *settings.yaml file contains comments. See **settings_template.yaml** file for more information.*
+
+## 🏃 Execution
+
+1. Open a terminal/command prompt on the directory containing script
+2. Ensure to activate the python virtual environment
+   - '(.venv.)' should be in front of the prompt sign. If not the case, run following command first:
+
+    ```bash
+    $ source .venv/bin/activate      # on Linux / MacOS
+               or    
+    > .venv\Scripts\Activate.bat     # on Windows 
+    ```
+
+3. Launch python script using:
+
+    ```bash
+    (.venv)> python csv_anonymizer.py    
+    ```
+
+4. Depending on presence or content of **settings.yaml** file, you can/cannot be prompted for some additional information
+
+## 🔢 Outcome
+
+Outcome for this script are CSV file(s). Depending on parameters specified in **settings.yaml**,  you can obtain following CSV files:
+
+```bash
+# Input file with content hashed according to columns, algorithm & salt selected.
+<input_file_name>_hash_<timestamp>.csv
+
+# General statistics per column name present in input file (nb_value, nb_unique_value, min_length, max_length, nb_unique_length)
+<input_file_name>_overview_<timestamp>.csv
+```
+
+----
 
 ## License
 
