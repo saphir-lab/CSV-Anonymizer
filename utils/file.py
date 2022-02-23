@@ -97,7 +97,9 @@ def generate_outfile_name(file_in, name_extension, name_sep="_", timestamp=True)
     if name_extension:
         end_name += name_sep + name_extension
     if timestamp:
-        end_name += name_sep + datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        # end_name += name_sep + datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        dt = datetime.datetime.now()
+        end_name += name_sep + dt.strftime('%Y%m%d') + name_sep + dt.strftime('%H%M%S') 
     file_out = file_name + end_name + file_ext
     return file_out
 

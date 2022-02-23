@@ -33,10 +33,10 @@ In order to do a minimal verification base on the length of the value, extra opt
 - Generate a second file (overview) with some statistics related to original data. This includes following statistics **for each column** present in the CSV FIle:
   - Number of values provided (in order to see column with missing values).
   - Number of **unique** values.
-  - The minimum length of value
-  - The maximum length of value
+  - The minimum length of value.
+  - The maximum length of value.
   - The number of different lengths found.
-- Transform original value to the text length
+- Transform original value to the text length.
 
 >**Note**: *parameter 'length' is presented in this script as part of the hash algorithms even if, conceptually, this is not a hash function.*
 
@@ -50,7 +50,7 @@ csv_anonymizer can be installed and setup by running:
 
 ```bash
 # For Linux / MacOS
-$ python -m venv .venv                      # Create a virtual environment
+$ python3 -m venv .venv                     # Create a virtual environment
 $ source .venv/bin/activate                 # Activate virtual environment 
 (.venv)$ pip install -r requirements.txt    # Install python dependencies in virtual env.
 
