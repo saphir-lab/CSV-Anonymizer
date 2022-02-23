@@ -100,7 +100,7 @@ Outcome for this script are CSV file(s). Depending on parameters specified in **
 
 ```bash
 # Input file with content hashed according to columns, algorithm & salt selected.
-<input_file_name>_hash_<timestamp>.csv
+<input_file_name>_hashed_<timestamp>.csv
 
 # General statistics per column name present in input file (nb_value, nb_unique_value, min_length, max_length, nb_unique_length)
 <input_file_name>_overview_<timestamp>.csv
