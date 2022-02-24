@@ -227,7 +227,12 @@ def get_parameters():
     
     # Transform Parameters
     algorithm = settings.get("Transform", {}).get("Algorithm","blake2s")
-    algorithm = "blake2s" if algorithm is None else algorithm.lower()
+    print (algorithm)
+    if algorithm is None:
+        if not do_overview:
+            algorithm = "blake2s" 
+    else:
+        algorithm.lower()
     salt = settings.get("Transform", {}).get("Salt","")
     salt = "" if salt is None else salt
     keep_original_values = settings.get("Transform", {}).get("KeepOriginalValues", False)
@@ -244,7 +249,8 @@ def get_parameters():
     # output_name_ext_transform = algorithm
     output_name_ext_transform = "hashed"
     output_name_ext_overview = "overview"
-    column_extension = "_" + algorithm
+    if algorithm:
+        column_extension = "_" + algorithm
 
 def validate_parameters(scope='all'):
     scope = scope.lower()
@@ -307,7 +313,7 @@ def validate_parameters(scope='all'):
                 parameter_content["Transform"] = parameter_content["Transform"].str.upper().str[0]
 
     if scope=='all' or scope=='algorithm':
-        if algorithm not in VALID_ALGORITHM:
+        if algorithm not in VALID_ALGORITHM and algorithm is not None:
             utils.print_msg(severity="ERROR", msg=f"Invalid algorithm specified ({algorithm}).\nPossible values are : {VALID_ALGORITHM}", colored=colored)
             valid = False
 
@@ -341,4 +347,7 @@ if __name__ == "__main__":
     if validate_parameters():
         if do_overview:
             csv_overview_main(input_content)
-        csv_transform_main(input_content, algorithm, salt)
+        if algorithm is None:
+            utils.print_msg(severity="WARNING", msg=f"\nParameter algorithm not specied. Asusuming OverViewFile is needed. Skip Anonymization process !", colored=colored)
+        else:
+            csv_transform_main(input_content, algorithm, salt)
