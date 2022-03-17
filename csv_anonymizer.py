@@ -227,7 +227,6 @@ def get_parameters():
     
     # Transform Parameters
     algorithm = settings.get("Transform", {}).get("Algorithm","blake2s")
-    print (algorithm)
     if algorithm is None:
         if not do_overview:
             algorithm = "blake2s" 
