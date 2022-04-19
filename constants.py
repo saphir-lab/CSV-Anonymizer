@@ -1,6 +1,6 @@
 import os
 
-APP_VERSION = "V1.0.2"
+APP_VERSION = "V1.0.3"
 DESIGNED_BY = "Designed by P. Saint-Amand"
 NULL = ""
 

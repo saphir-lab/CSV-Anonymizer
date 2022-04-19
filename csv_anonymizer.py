@@ -90,9 +90,9 @@ def csv_transform_fields(df, fields_to_transform, algorithm="blake2s", salt=""):
             lambda x: 
                 eval(algorithm_hash) if not x == "" else missing_value
         )
-        # if not keep_column_name:
-        #     header_transformed=[fld + column_extension for fld in fields_to_transform if fld in df]
-        #     df_transformed.columns = header_transformed
+        if not keep_column_name:
+            header_transformed=[fld + column_extension for fld in fields_to_transform if fld in df]
+            df_transformed.columns = header_transformed
     return df_transformed
 
 def csv_transform_main(df, algorithm="blake2s", salt=""):
@@ -101,35 +101,34 @@ def csv_transform_main(df, algorithm="blake2s", salt=""):
     if not fields_to_transform:
         utils.print_msg(severity="ERROR", msg=f"No field to transform found in input file. No Output will be generated.", colored=colored)
     else:
-        result = pd.DataFrame()
+        col_order = []
         csv_transformed = pd.DataFrame()
         csv_transformed = csv_transform_fields(df, fields_to_transform=fields_to_transform, algorithm=algorithm, salt=salt)
         if not csv_transformed.empty:
-            # Original version with all transformed data at the beginning of dataframe
-            # -------------------------------
-            # if keep_original_values:
-            #     result = pd.concat([csv_transformed, df], axis=1)
-            # else:
-            #     result = pd.concat([csv_transformed, df[fields_to_keep]], axis=1)
-
-
-            # New version keeping original columns order
-            # -------------------------------
+            # Determine final column order
+            # ----------------------------
             for col in df:
                 if col in fields_to_keep:
-                    result[col] = df[col]
-                
+                    col_order.append(col)               
                 if col in fields_to_transform:
                     if keep_original_values:
-                        result[col] = df[col]
-                    result[col+column_extension] = csv_transformed[col]
+                        col_order.append(col)
+                    col_order.append(col+column_extension)
+
+            # Add transformed data at the beginning of dataframe
+            # ---------------------------------------------------
+            if keep_original_values:
+                df = pd.concat([csv_transformed, df], axis=1)
+            else:
+                df = pd.concat([csv_transformed, df[fields_to_keep]], axis=1)
+            df = df[col_order]      # Columns re-ordering following original source
 
             # Output CSV File
-            if not result.empty:
+            if not df.empty:
                 output_csv_file = utils.generate_outfile_name(input_csv_file, name_extension=output_name_ext_transform, name_sep=output_name_separator, timestamp=output_name_timestamp)
                 if output_csv_location:
                     output_csv_file = utils.change_filename_location(output_csv_file, output_csv_location)
-                utils.csv_save(result, csv_file=output_csv_file, csv_separator=output_csv_separator, colored=colored)
+                utils.csv_save(df, csv_file=output_csv_file, csv_separator=output_csv_separator, colored=colored)
 
 def get_field_selection(df):
     """[Get Field name from header and classify to be hashed or not following parameter provided]
@@ -171,9 +170,6 @@ def get_field_selection(df):
         pass
     
     print(f"Option: {selection_type}")
-    # print(f"Expected Fields Missing: {lst_fields_expected_missing}")
-    # print(f"Include Fields: {lst_fields_include}")
-    # print(f"Exclude Fields: {lst_fields_exclude}")
     print(f"- Columns specified but not present in CSV: {lst_fields_expected_missing}")
     print(f"- Columns to transform: {lst_fields_include}")
     print(f"- Columns to keep unchanged: {lst_fields_exclude}")
