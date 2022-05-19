@@ -1,8 +1,7 @@
 import os
 
-APP_VERSION = "V1.0.3"
+APP_VERSION = "V 1.1.0"
 DESIGNED_BY = "Designed by P. Saint-Amand"
-NULL = ""
 
 # Some interresting path
 CUR_DIR=os.path.dirname(os.path.abspath(__file__))

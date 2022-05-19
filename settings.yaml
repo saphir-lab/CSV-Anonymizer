@@ -6,7 +6,7 @@
 #     <number>: will keep a fix banner cross program execution
 # Debug: Level of processing information displayed during execution.
 Console:
-  Banner: "random"      # possible values: null, random, <number>
+  Banner: random        # possible values: null, random, <number>
   ColoredOutput: true
   Debug: verbose        # functionality not yet implemented
 

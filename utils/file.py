@@ -1,8 +1,9 @@
 ### Import standard modules
+from cmath import nan
 import datetime
+import hashlib
 import json
 import os
-from pathlib import Path
 import sys
 
 ### Import external modules
@@ -10,143 +11,252 @@ import pandas as pd
 import yaml
 
 ### Import personal modules
-from utils.layout import *
+from utils.console import Console
 
-def ask_file(question="File name: ", colored=True):
-    """Loop requesting user for a file name until this one is found/exists
+### Retrieve filename and filename elements (path, name, extension, etc.)
+class FileName():
+    def __init__(self, fullpath="", colored=True):
+        self.fullpath=fullpath
+        self.fullpath_noextension=""
+        self.filepath=""
+        self.filename=""
+        self.filename_noextension=""
+        self.fileextension=""
+        if fullpath:
+            self.set_filename_elements(fullpath)
+        self.console = Console(colored)
 
-    Returns:
-        str: a file name with appropriate path format
-    """
-    msg=""
-    file_in = ""
-    while not file_in:
-        if msg:
-            print_msg("ERROR", msg=msg, colored=colored)
-        file_in = Path(input(question).strip('"'))
-        if not file_in.exists() or not file_in.is_file():
-            msg = "File Specified doesn't exists. Please specify full path"
-            file_in=""
-    return file_in
+    def ask_input_file(self, question="File name: "):
+        """Loop requesting user for a file name until this one is found/exists
 
-def change_filename_location(file_in, target_location):
-    """Change the location of a <file_in> using <target_location>
+        Returns:
+            str: a file name with appropriate path format
+        """
+        msg=""
+        file_in = ""
+        while not file_in:
+            if msg:
+                self.console.print_msg("ERROR", msg)
+            file_in = input(question).strip('"')
+            if not os.path.isfile(file_in):
+                msg = "File Specified doesn't exists. Please specify full path"
+                file_in=""
+        self.set_filename_elements(file_in)
+        return file_in
 
-    Args:
-        file_in (str): a file name (with path)
-        target_location (str): a path (directory name only)
+    def print_filename_details(self):
+        print()
+        print("- fullpath: " + self.fullpath)
+        print("- fullpath no extension: " + self.fullpath_noextension)
+        print("- filepath: " + self.filepath)
+        print("- filename: " + self.filename)
+        print("- filename no extension: " + self.filename_noextension)
+        print("- file extension: " + self.fileextension)
 
-    Returns:
-        [str]: <target_location>/<filename>
-    """
-    (file_location, file_name) = os.path.split(file_in)
-    file_out = target_location + os.path.sep + file_name
-    return file_out
-
-def csv_load(csv_file, csv_separator=";", colored=True):
-    """[Load and return a CSV file content as a pandas dataframe]
-
-    Returns:
-        [DataFrame]: [DataFrame with CSV File content]
-    """
-    df=pd.DataFrame()
-    try:
-        df = pd.read_csv(csv_file, delimiter=csv_separator, low_memory=False, dtype=str)  # Force all columns as string
-    # except FileNotFoundError:
-    #     print("- File not found.")
-    # except pd.errors.EmptyDataError:
-    #     print("- No data")
-    # except pd.errors.ParserError:
-    #     print("- Parsing error (check file and or separator character)")
-    except:
-        print_msg("ERROR", f"{sys.exc_info()[0]}: Fail to load CSV file '{csv_file}'", colored=colored)
-    else:
-        (nb_rows, nb_columns) = df.shape
-        print_msg("SUCCESS", f"Successfully load CSV file '{csv_file}'")
-        print(f"- File contains {nb_columns} columns and {nb_rows} lines")
-    return df
-
-def csv_save(df, csv_file, csv_separator=";", colored=True):
-    """[Save a pandas dataframe as CSV File]
-
-    Returns:
-        [Boolean]: True when successfully saved. False otherwise
-    """
-    status=True
-    try:
-        df.to_csv(csv_file, encoding="UTF-8", index=False, sep=csv_separator)
-    except:
-        print_msg("ERROR", f"{sys.exc_info()[0]}: Fail to save CSV file '{csv_file}'", colored=colored)
-    else:
-        print_msg("SUCCESS", f"Successfully save CSV file '{csv_file}'", colored=colored)
-
-    return status
-
-def generate_outfile_name(file_in, name_extension, name_sep="_", timestamp=True):
-    """Add a timestamp in the name of an existing file name
-
-    Args:
-        file_in (str): a file name (with path)
-        name_extension (str) [Optional]: 
-
-    Returns:
-        [str]: <file_in>_<name_extension>_timestamp
-    """
-    (file_name, file_ext) = os.path.splitext(file_in)
-    end_name = ""
-    if name_extension:
-        end_name += name_sep + name_extension
-    if timestamp:
-        # end_name += name_sep + datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        dt = datetime.datetime.now()
-        end_name += name_sep + dt.strftime('%Y%m%d') + name_sep + dt.strftime('%H%M%S') 
-    file_out = file_name + end_name + file_ext
-    return file_out
-
-def get_file_type(filename):
-    """Retrieve the file extension from a filename (part after last DOT)
-
-    Args:
-        filename (file): A File name with full path
-
-    Returns:
-        String: Characters after last dot in a file path usually last 3 or 4 characters)
-    """
-    filetype=""
-    # try:
-    #     filetype = os.path(filename).suffix
-    # except:
-    #      filetype=""
-    try:
-        filetype = os.path.splitext(filename)[1].lower()
-    except:
-        filetype=""
-    return filetype
-
-def get_settings(filename):
-    """Return a Dictionnary from Json or Yaml file
-
-    Args:
-        filename (file): File Name containing settings. Supported foramt : Json or Yaml
-
-    Returns:
-        Dictionnary: [A Dictionnary build from Json/YAML]
-    """
-    custom_settings = {}
-    filetype = get_file_type(filename)
-    if filetype == ".json":
+    def set_filename_elements(self, fullpath):
+        self.fullpath = fullpath
         try:
-            with open(filename) as config_file:
-                custom_settings = json.load(config_file)
-        except:
-            print_msg("ERROR",f"Setting File '{filename}' not found.")
-    elif filetype == ".yaml" or filetype == ".yml" :
+            self.filepath = os.path.dirname(self.fullpath)
+            self.filename = os.path.basename(self.fullpath)
+            self.filename_noextension, self.fileextension = os.path.splitext(self.filename)
+            if self.filepath:
+                self.fullpath_noextension = self.filepath + os.path.sep + self.filename_noextension
+            else:
+                self.fullpath_noextension = self.filename_noextension
+        except Exception as e:
+            self.console.print_msg("ERROR", f"{str(e)}")
+
+### Transform filename
+    def change_filepath(self, new_filepath):
+        """Change the location of current filename with new_filepath>
+        """
+        if new_filepath:
+            new_fullpath = new_filepath + os.path.sep + self.filename
+        else:
+            new_fullpath = self.filename
+        self.set_filename_elements(new_fullpath)
+        return new_fullpath
+ 
+    def add_subname(self, subname, sep="_"):
+        """Add free text at the end of the filename using an optional text separator (default separator "_")
+        """
+        new_fullpath = self.fullpath_noextension + sep + subname + self.fileextension
+        self.set_filename_elements(new_fullpath)
+        return new_fullpath
+
+    def add_dayonly(self, sep="_"):
+        """Add date (YYMMDD) at the end of the filename using an optional text separator (default separator "_")
+        """
+        dt = datetime.datetime.now()      
+        new_fullpath = self.fullpath_noextension + sep + dt.strftime('%Y%m%d') + self.fileextension
+        self.set_filename_elements(new_fullpath)
+        return new_fullpath
+
+    def add_datetime(self, sep="_"):
+        """Add timestamp (YYMMDD HHMMSS) at the end of the filename using an optional text separator (default separator "_")
+        """
+        dt = datetime.datetime.now()      
+        new_fullpath = self.fullpath_noextension + sep + dt.strftime('%Y%m%d') + sep + dt.strftime('%H%M%S') + self.fileextension
+        self.set_filename_elements(new_fullpath)
+        return new_fullpath
+
+### Read & write CSV File using Pandas dataframes
+class CSVFile():
+    def __init__(self, csv_filename="", sep=";", colored=True):
+        self.filename = csv_filename
+        self.separator = sep
+        self.console = Console(colored)
+        self.content = pd.DataFrame()
+        self.stat = pd.DataFrame()
+
+        self.VALID_HASHING = ["blake2s", "blake2b", "md5", "sha1", "sha224", "sha256", "sha384", "sha512", "sha3_224", "sha3_256", "sha3_384", "sha3_512"]
+        self.VALID_ALGORITHM = ["index", "length"] + self.VALID_HASHING
+
+    def get_stat(self):
+        """Return a DataFrame with various info on every columns from a source dataframe
+
+        Args:
+            df (DataFrame): Source DataFrame to Analyze
+
+        Returns:
+            DataFrame: A dataFrame with some statistics on each columns
+        """
+        self.stat = pd.DataFrame()
+        if not self.content.empty:
+            self.stat["column_name"]=list(self.content.columns)
+            self.stat["nb_value"] = list(self.content.count())
+            self.stat["nb_unique_value"] = list(self.content.nunique())
+            
+            df_len = self.content.applymap(lambda x: len(x), na_action="ignore")
+            self.stat["min_length"]  = list(df_len.min())
+            self.stat["max_length"] = list(df_len.max())
+            self.stat["nb_unique_length"] = list(df_len.nunique())
+            self.stat[["min_length", "max_length"]] = self.stat[["min_length", "max_length"]].fillna("0").astype(int)   ## Necessary step as numeric column with NaN value are considered as float
+        return self.stat
+
+    def load(self):
+        """[Load and return a CSV file content as a pandas dataframe]
+
+        Returns:
+            [DataFrame]: [DataFrame with CSV File content]
+        """
         try:
-            with open(filename) as config_file:
-                custom_settings = yaml.safe_load(config_file)
-        except:
-            print_msg("ERROR",f"Setting File '{filename}' not found.")
-    else:
-        pass
-    return custom_settings
+            self.content = pd.read_csv(self.filename, delimiter=self.separator, low_memory=False, dtype=str)  # Force all columns as string
+        except Exception as e:
+            self.console.print_msg("ERROR", f"Fail to load CSV file '{self.filename}':")
+            self.console.print_msg("ERROR", f"{str(e)}")
+        else:
+            (nb_rows, nb_columns) = self.content.shape
+            self.console.print_msg("SUCCESS", f"Successfully load CSV file '{self.filename}'")
+            print(f"- File contains {nb_columns} columns and {nb_rows} lines")
+        return self.content
+
+    def save_content(self, csv_filename, csv_separator=""):
+        """[Save a pandas dataframe as CSV File]
+
+        Returns:
+            [Boolean]: True when successfully saved. False otherwise
+        """
+        if not csv_separator:
+            csv_separator = self.separator
+        try:
+            self.content.to_csv(csv_filename, encoding="UTF-8", index=False, sep=csv_separator)
+        except Exception as e:
+            self.console.print_msg("ERROR", f"Fail to save CSV file '{csv_filename}':")
+            self.console.print_msg("ERROR", f"{str(e)}")
+            return False
+        else:
+            self.console.print_msg("SUCCESS", f"Successfully save CSV file '{csv_filename}'")
+            return True
+    
+    def save_stat(self, csv_filename, csv_separator=""):
+        """[Save a pandas statistics dataframe as CSV File]
+
+        Returns:
+            [Boolean]: True when successfully saved. False otherwise
+        """
+        if not csv_separator:
+            csv_separator = self.separator
+        try:
+            self.stat.to_csv(csv_filename, encoding="UTF-8", index=False, sep=csv_separator)
+        except Exception as e:
+            self.console.print_msg("ERROR", f"Fail to save CSV file '{csv_filename}':")
+            self.console.print_msg("ERROR", f"{str(e)}")
+            return False
+        else:
+            self.console.print_msg("SUCCESS", f"Successfully save CSV file '{csv_filename}'")
+            return True
+    
+    def hash_content(self, fields_to_transform, algorithm="blake2s", salt=""):
+        df_transformed = pd.DataFrame()
+        algorithm_hash = ""
+        missing_value = ""
+        distinct_values = []
+        VALID_HASHING = ["blake2s", "blake2b", "md5", "sha1", "sha224", "sha256", "sha384", "sha512", "sha3_224", "sha3_256", "sha3_384", "sha3_512"]
+
+        if fields_to_transform:
+            if algorithm in VALID_HASHING:
+                print(f"Salt: {salt}")
+                if salt is None:
+                    salt=""
+                algorithm_hash = f"hashlib.{algorithm}(salt.encode() + x.encode()).hexdigest()"
+                missing_value = nan
+            elif algorithm=="length":
+                algorithm_hash = f"len(x)"
+                missing_value = 0
+            elif algorithm=="index":
+                for el in fields_to_transform:
+                    distinct_value_col=self.content[el].unique()
+                    distinct_values = distinct_values + list(set(distinct_value_col).difference(distinct_values))
+                algorithm_hash = f"{distinct_values}.index(x)+1"
+                missing_value = 0
+            else:
+                self.console.print_msg("ERROR", f"Unknown Algorithm specified: {algorithm}")
+            df_transformed = self.content[fields_to_transform].fillna("").applymap(
+                lambda x: 
+                    eval(algorithm_hash,{"hashlib":hashlib},{"salt":salt, "x":x}) if not x == "" else missing_value
+            )
+        return df_transformed
+   
+### Retrieve Json or Yaml Content
+class ParameterFile():
+    def __init__(self, filename="", colored=True):
+        self.filename = FileName()
+        self.parameters={}
+        self.console = Console(colored)
+
+        if filename:
+            self.filename = FileName(filename)
+            self.load()
+        
+    def load(self):
+        """Return a Dictionnary from Json or Yaml file
+
+        Args:
+            filename (file): File Name containing settings. Supported format : Json or Yaml
+
+        Returns:
+            Dictionnary: [A Dictionnary build from Json/YAML]
+        """
+        self.parameters = {}
+        filetype = self.filename.fileextension.lower()
+
+        supported_filetype = [".json", ".yaml", ".yml"]
+        if filetype not in supported_filetype:
+            self.console.print_msg("ERROR",f"Parameter file supports following format only: json, yml, yaml.")
+        else:
+            try:
+                if filetype == ".json":
+                    with open(self.filename.fullpath) as config_file:
+                        self.parameters = json.load(config_file)
+                elif filetype == ".yaml" or filetype == ".yml" :
+                    with open(self.filename.fullpath) as config_file:
+                        self.parameters = yaml.safe_load(config_file)
+            except Exception as e:
+                self.console.print_msg("ERROR",f"with Parameter File '{self.filename.fullpath}':")
+                self.console.print_msg("ERROR",f"{str(e)}")
+            else:
+                self.console.print_msg("SUCCESS",f"Parameter file '{self.filename.fullpath}' successfuly loaded")
+
+        return self.parameters
 
