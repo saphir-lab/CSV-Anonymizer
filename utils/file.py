@@ -141,7 +141,7 @@ class CSVFile():
             [DataFrame]: [DataFrame with CSV File content]
         """
         try:
-            self.content = pd.read_csv(self.filename, delimiter=self.separator, low_memory=False, dtype=str)  # Force all columns as string
+            self.content = pd.read_csv(self.filename, encoding="UTF-8", delimiter=self.separator, low_memory=False, dtype=str)  # Force all columns as string
         except Exception as e:
             self.console.print_msg("ERROR", f"Fail to load CSV file '{self.filename}':")
             self.console.print_msg("ERROR", f"{str(e)}")
