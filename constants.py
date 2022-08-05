@@ -1,6 +1,6 @@
 import os
 
-APP_VERSION = "V 1.1.2"
+APP_VERSION = "V 1.1.3"
 DESIGNED_BY = "Designed by P. Saint-Amand"
 
 # Some interresting path

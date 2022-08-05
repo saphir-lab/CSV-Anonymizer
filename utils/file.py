@@ -143,7 +143,7 @@ class CSVFile():
         try:
 #            self.content = pd.read_csv(self.filename, encoding="UTF-8", delimiter=self.separator, low_memory=False, dtype=str)  # Force all columns as string
 #           change encoding in order to solve following error : utf-8' codec can't decode byte 0xae in position xxx: invalid start byte
-            self.content = pd.read_csv(self.filename, encoding="unicode_escape", delimiter=self.separator, low_memory=False, dtype=str)  # Force all columns as string
+            self.content = pd.read_csv(self.filename, encoding="unicode_escape", encoding_errors="ignore", delimiter=self.separator, low_memory=False, dtype=str)  # Force all columns as string
         except Exception as e:
             self.console.print_msg("ERROR", f"Fail to load CSV file '{self.filename}':")
             self.console.print_msg("ERROR", f"{str(e)}")
