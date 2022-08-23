@@ -102,9 +102,10 @@ class FileName():
 
 ### Read & write CSV File using Pandas dataframes
 class CSVFile():
-    def __init__(self, csv_filename="", sep=";", colored=True):
+    def __init__(self, csv_filename="", sep=";", chunksize=10000, colored=True):
         self.filename = csv_filename
         self.separator = sep
+        self.chunksize = chunksize
         self.console = Console(colored)
         self.content = pd.DataFrame()
         self.stat = pd.DataFrame()
@@ -154,22 +155,79 @@ class CSVFile():
             print(f"- File contains {nb_columns} columns and {nb_rows} lines")
         return self.content
 
-    def save_content(self, csv_filename, csv_separator=""):
-        """[Save a pandas dataframe as CSV File]
+    def load_sample(self, skiprows=0, nrows=10):
+        """[Load a part of CSV file and return content as a pandas dataframe]
 
+        Returns:
+            [DataFrame]: [DataFrame with CSV File content]
+        """
+        try:
+            self.content = pd.read_csv(self.filename, 
+                                        encoding="utf-8", 
+                                        encoding_errors="ignore", 
+                                        delimiter=self.separator, 
+                                        low_memory=False, 
+                                        dtype=str,
+                                        skiprows=skiprows,
+                                        nrows=nrows)
+        except Exception as e:
+            self.console.print_msg("ERROR", f"Fail to load sample lines from CSV file '{self.filename}':")
+            self.console.print_msg("ERROR", f"{str(e)}")
+        else:
+            (nb_rows, nb_columns) = self.content.shape
+            self.console.print_msg("SUCCESS", f"Successfully load sample lines from CSV file '{self.filename}'")
+            print(f"- File contains {nb_columns} columns")
+        return self.content
+
+    def get_chunk_iterator(self, chunksize):
+        """
+
+        Returns:
+            [DataFrame iterator : [iterator to go to different chunk of DataFrame with CSV File content]
+        """
+        if not chunksize:
+            chunksize = self.chunksize
+        try:
+            df_iterator = pd.read_csv(self.filename, 
+                                        encoding="utf-8", 
+                                        encoding_errors="ignore", 
+                                        delimiter=self.separator, 
+                                        low_memory=False, 
+                                        dtype=str,
+                                        chunksize=chunksize)
+            # self.content = 
+        except Exception as e:
+            self.console.print_msg("ERROR", f"Fail to load chunk iterator from CSV file '{self.filename}':")
+            self.console.print_msg("ERROR", f"{str(e)}")
+        return df_iterator
+
+    def save_content(self, csv_filename, csv_separator="", header=True, mode="w"):
+        """[Save a pandas dataframe as CSV File]
+            mode = 'w' will overwrite existing file (default)
+            mode = 'a' will append to existing file (to be used in case of chunk)
         Returns:
             [Boolean]: True when successfully saved. False otherwise
         """
         if not csv_separator:
             csv_separator = self.separator
         try:
-            self.content.to_csv(csv_filename, encoding="UTF-8", index=False, sep=csv_separator)
+            self.content.to_csv(csv_filename, encoding="UTF-8", index=False, sep=csv_separator, header=header, mode=mode)
         except Exception as e:
-            self.console.print_msg("ERROR", f"Fail to save CSV file '{csv_filename}':")
+            if mode == "w":
+                self.console.print_msg("ERROR", f"Fail to create CSV file '{csv_filename}':")
+            elif mode == "a":
+                self.console.print_msg("ERROR", f"Fail to append content to CSV file '{csv_filename}':")
+            else:
+                pass
             self.console.print_msg("ERROR", f"{str(e)}")
             return False
         else:
-            self.console.print_msg("SUCCESS", f"Successfully save CSV file '{csv_filename}'")
+            if mode == "w":
+                self.console.print_msg("SUCCESS", f"Successfully create CSV file '{csv_filename}':")
+            elif mode == "a":
+                self.console.print_msg("SUCCESS", f"Successfully append content to CSV file '{csv_filename}':")
+            else:
+                pass
             return True
     
     def save_stat(self, csv_filename, csv_separator=""):
@@ -190,7 +248,7 @@ class CSVFile():
             self.console.print_msg("SUCCESS", f"Successfully save CSV file '{csv_filename}'")
             return True
     
-    def hash_content(self, fields_to_transform, algorithm="blake2s", salt=""):
+    def hash_content(self, fields_to_transform, algorithm="blake2s", salt="", display_salt=True):
         df_transformed = pd.DataFrame()
         algorithm_hash = ""
         missing_value = ""
@@ -199,7 +257,8 @@ class CSVFile():
 
         if fields_to_transform:
             if algorithm in VALID_HASHING:
-                print(f"Salt: {salt}")
+                if display_salt:
+                    print(f"Salt: {salt}")
                 if salt is None:
                     salt=""
                 algorithm_hash = f"hashlib.{algorithm}(salt.encode() + x.encode()).hexdigest()"
@@ -209,7 +268,7 @@ class CSVFile():
                 missing_value = 0
             elif algorithm=="index":
                 for el in fields_to_transform:
-                    distinct_value_col=self.content[el].unique()
+                    distinct_value_col = self.content[el].dropna().unique()
                     distinct_values = distinct_values + list(set(distinct_value_col).difference(distinct_values))
                 algorithm_hash = f"{distinct_values}.index(x)+1"
                 missing_value = 0

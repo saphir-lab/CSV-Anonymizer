@@ -16,12 +16,13 @@ Console:
 Source:
   CSVFile: null
   CSVSeparator: ;
-
+  ChunkSize: 25000            # Number of lines per chunk of data to process (avoid memory issue for large file)
+  
 ###
 #  
 Output:
-  CSVLocation: null            # if not specified (null), Will be same location as CSV input. Note that folder should already exists.
-  CSVSeparator: null           # if not specified (null), Will be same separator as CSV input.
+  CSVLocation: null            # if not specified (null), will be same location as CSV input. Note that folder should already exists.
+  CSVSeparator: null           # if not specified (null), will be same separator as CSV input.
   OverviewFile: false
   FileNameSeparator: _
   FileNameTimeStamp: true      # if true, add timestamp of execution at the end of filename.
@@ -33,6 +34,7 @@ Transform:
   Salt: null                  # optional. Specify a string to be used as salt with the algorithm for all the fields you want to provide a hash.
   KeepOriginalValues: false   # for debugging purpose. To have 2 columns with both original and transformed value (when true, parameter KeepColumnName is then forced to false).
   KeepColumnName: true        # when false, will reflect in column names which one has been transformed & using which algorithm.
+  ChunkOutput: false          # if false, will generate 1 single output file. If true will generate 1 output file per chunk processed (see Source/ChunkSize)
   Selection: All              # possible values : All, ExclusionList, InclusionList, ParameterFile.
 
 ###
