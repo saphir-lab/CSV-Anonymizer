@@ -16,7 +16,7 @@ Console:
 Source:
   CSVFile: null
   CSVSeparator: ;
-  ChunkSize: 10000            # Number of lines per chunk of data to process (avoid memory issue for large file)
+  ChunkSize: 25000            # Number of lines per chunk of data to process (avoid memory issue for large file)
   
 ###
 #  
