@@ -299,11 +299,12 @@ if __name__ == "__main__":
     print(console.get_app_banner(selection=banner_selection, banner_lst=banner_lst, appversion=APP_VERSION, creator=DESIGNED_BY))
     if validate_parameters():
         df_iterator = get_chunk_iterator(input_csv_file)
-        for i, input_csv_file.content in enumerate(df_iterator):
-            print(f'\n--- Chunk {i+1}: lines {i*chunk_size+1}-{i*chunk_size + input_csv_file.content.shape[0]}')
+        for chunk_number, input_csv_file.content in enumerate(df_iterator):
+            chunk_number +=  1
+            print(f'\n--- Chunk {chunk_number}: lines {chunk_number*chunk_size+1}-{chunk_number*chunk_size + input_csv_file.content.shape[0]}')
             
-            display_info = i == 0                               # Display info & add header only for the first chunk
-            if not chunk_output and i>0:
+            display_info = chunk_number == 1                               # Display info & add header only for the first chunk
+            if not chunk_output and chunk_number > 1:
                 mode = "a"
                 display_header=False 
             else:
@@ -316,7 +317,7 @@ if __name__ == "__main__":
                 if not input_csv_file.stat.empty:
                     overview_csv_filename = generate_filename(filename=input_csv_filename,
                         filepath=output_csv_location,
-                        subname=f"{output_name_ext_overview}{output_name_separator}chunk{i+1}",
+                        subname=f"{output_name_ext_overview}{output_name_separator}chunk{chunk_number}",
                         sep=output_name_separator,
                         timestamp=output_name_timestamp,
                         colored=True,
@@ -331,7 +332,7 @@ if __name__ == "__main__":
                     if chunk_output:
                         output_csv_filename = generate_filename(filename=input_csv_filename,
                                                 filepath=output_csv_location,
-                                                subname=f"{output_name_ext_transform}{output_name_separator}chunk{i+1}",
+                                                subname=f"{output_name_ext_transform}{output_name_separator}chunk{chunk_number}",
                                                 sep=output_name_separator,
                                                 timestamp=output_name_timestamp,
                                                 colored=True,
