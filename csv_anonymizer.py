@@ -321,12 +321,12 @@ if __name__ == "__main__":
                 input_csv_file.get_stat()
                 if not input_csv_file.stat.empty:
                     overview_csv_filename = generate_filename(filename=input_csv_filename,
-                        filepath=output_csv_location,
-                        subname=f"{output_name_ext_overview}{output_name_separator}chunk{chunk_number}",
-                        sep=output_name_separator,
-                        timestamp=output_name_timestamp,
-                        colored=True,
-                        )
+                                                            filepath=output_csv_location,
+                                                            subname=f"{output_name_ext_overview}{output_name_separator}chunk{chunk_number}",
+                                                            sep=output_name_separator,
+                                                            timestamp=output_name_timestamp,
+                                                            colored=True,
+                                                            )
                     input_csv_file.save_stat(overview_csv_filename.fullpath, csv_separator=output_csv_separator)
             if algorithm:
                 console.print_msg("INFO", "Hashing CSV Content")
@@ -334,10 +334,10 @@ if __name__ == "__main__":
                 if not input_csv_file.content.empty:
                     if chunk_output:
                         output_csv_filename = generate_filename(filename=input_csv_filename,
-                                                filepath=output_csv_location,
-                                                subname=f"{output_name_ext_transform}{output_name_separator}chunk{chunk_number}",
-                                                sep=output_name_separator,
-                                                timestamp=output_name_timestamp,
-                                                colored=True,
-                                                )
+                                                                filepath=output_csv_location,
+                                                                subname=f"{output_name_ext_transform}{output_name_separator}chunk{chunk_number}",
+                                                                sep=output_name_separator,
+                                                                timestamp=output_name_timestamp,
+                                                                colored=True,
+                                                                )
                     input_csv_file.save_content(output_csv_filename.fullpath, csv_separator=output_csv_separator, header=display_header, mode=mode)
