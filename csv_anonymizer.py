@@ -271,6 +271,11 @@ def validate_parameters():
                 parameter_csv_file.content.columns = ["Fields", "Transform"]
                 parameter_csv_file.content["Transform"] = parameter_csv_file.content["Transform"].str.upper().str[0]
     
+### Display info or warning messages
+        if algorithm is None:
+            do_overview = True
+            console.print_msg("WARNING", "Parameter algorithm not specified. Assuming OverviewFile is needed. Skip Anonymization process !")
+
         # We need to have a column name extension if we want to keep original values
         if keep_original_values and keep_column_name:
             keep_column_name = False    # Force to change column name for transformed columns
@@ -323,9 +328,7 @@ if __name__ == "__main__":
                         colored=True,
                         )
                     input_csv_file.save_stat(overview_csv_filename.fullpath, csv_separator=output_csv_separator)
-            if algorithm is None:
-                console.print_msg("WARNING", "Parameter algorithm not specified. Assuming OverviewFile is needed. Skip Anonymization process !")
-            else:
+            if algorithm:
                 console.print_msg("INFO", "Hashing CSV Content")
                 input_csv_file.content = csv_transform(input_csv_file.content, algorithm, salt, info=display_info)
                 if not input_csv_file.content.empty:
