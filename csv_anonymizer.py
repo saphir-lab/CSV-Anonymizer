@@ -57,6 +57,17 @@ def csv_transform(df, algorithm="blake2s", salt="", info=True):
             df = df[col_order]      # Columns re-ordering following original source
     return df
 
+def generate_filename(filename, filepath, subname, sep="_", timestamp=True, colored=True):
+    newfilename = utils.FileName(filename, colored=colored)
+    newfilename.add_subname(subname=subname, sep=sep)
+    if timestamp:
+        newfilename.add_datetime(sep=sep)
+    newfilename.change_filepath(new_filepath=filepath)
+    return newfilename
+
+def get_chunk_iterator(csv_file):
+    return csv_file.get_chunk_iterator(chunksize=chunk_size)
+
 def get_field_selection(df, info=True):
     """[Get Field name from header and classify to be hashed or not following parameter provided]
 
@@ -169,14 +180,12 @@ def get_parameters():
     parameter_csv_separator = settings.get("SelectionParameters", {}).get("ParameterFile", {}).get("CSVSeparator", input_csv_separator)
 
     # Forced Parameters:
-    # output_name_ext_transform = algorithm
     output_name_ext_transform = "hashed"
     output_name_ext_overview = "overview"
     if algorithm:
         column_extension = "_" + algorithm
 
-def validate_parameters(scope='all'):
-    scope = scope.lower()
+def validate_parameters():
     valid = True
 
     global input_csv_filename, input_csv_file, chunk_size
@@ -184,7 +193,7 @@ def validate_parameters(scope='all'):
     global output_name_ext_transform, output_name_ext_overview, keep_column_name, column_extension
     global output_csv_separator, output_name_timestamp, parameter_csv_separator
     global output_csv_location, output_csv_filename, overview_csv_filename
-    global algorithm, chunk_output
+    global do_overview, algorithm, chunk_output
 
     if not output_csv_separator:
         output_csv_separator = input_csv_separator
@@ -193,31 +202,28 @@ def validate_parameters(scope='all'):
         parameter_csv_separator = input_csv_separator
 
 # Format problem with some parameter value
-    if scope=='all' or scope=='algorithm':
-        if algorithm not in VALID_ALGORITHM and algorithm is not None:
-            console.print_msg(severity="ERROR", msg=f"Invalid algorithm specified: '{algorithm}'.\nPossible values are: {VALID_ALGORITHM}")
-            valid = False
+    if algorithm not in VALID_ALGORITHM and algorithm is not None:
+        console.print_msg(severity="ERROR", msg=f"Invalid algorithm specified: '{algorithm}'.\nPossible values are: {VALID_ALGORITHM}")
+        valid = False
 
-    if scope=='all' or scope=='output_name_separator':
-        if any(invalid_char in output_name_separator for invalid_char in INVALID_SEPARATOR):
-            console.print_msg(severity="ERROR", msg=f"Invalid character as FileNameSeparator ({output_name_separator}).\nProhibited characters are: {INVALID_SEPARATOR}")
-            valid = False
+    if any(invalid_char in output_name_separator for invalid_char in INVALID_SEPARATOR):
+        console.print_msg(severity="ERROR", msg=f"Invalid character as FileNameSeparator ({output_name_separator}).\nProhibited characters are: {INVALID_SEPARATOR}")
+        valid = False
 
     if valid:
     # Missing Input CSV File
-        if scope=='all' or scope=='input_file':
-            print()
-            if input_csv_filename:
-                input_csv_file = utils.CSVFile(csv_filename=input_csv_filename, sep=input_csv_separator,colored=colored)
-                input_csv_file.load_sample()
-            while not input_csv_filename or input_csv_file.content.empty:
-                input_csv_filename = utils.FileName(colored=colored).ask_input_file("CSV File to transform: ")
-                input_csv_file = utils.CSVFile(csv_filename=input_csv_filename, sep=input_csv_separator,colored=colored)
-                input_csv_file.load_sample()
-            if len(input_csv_file.content.columns) == 1:
-                console.print_msg(severity="WARNING", msg=f"CSV File loaded contains only 1 column. Verify if CSV Separator '{input_csv_separator}' parameter is correct one.")
-                if utils.Menu(colored=colored).menu_choice_YN("Do you want to process file") == "N":                
-                    exit()
+        print()
+        if input_csv_filename:
+            input_csv_file = utils.CSVFile(csv_filename=input_csv_filename, sep=input_csv_separator,colored=colored)
+            input_csv_file.load_sample()
+        while not input_csv_filename or input_csv_file.content.empty:
+            input_csv_filename = utils.FileName(colored=colored).ask_input_file("CSV File to transform: ")
+            input_csv_file = utils.CSVFile(csv_filename=input_csv_filename, sep=input_csv_separator,colored=colored)
+            input_csv_file.load_sample()
+        if len(input_csv_file.content.columns) == 1:
+            console.print_msg(severity="WARNING", msg=f"CSV File loaded contains only 1 column. Verify if CSV Separator '{input_csv_separator}' parameter is correct one.")
+            if utils.Menu(colored=colored).menu_choice_YN("Do you want to process file") == "N":                
+                exit()
     # Set same location for output files as input file in case not specified 
         if output_csv_location is None:
             output_csv_location=utils.FileName(input_csv_filename).filepath
@@ -240,59 +246,49 @@ def validate_parameters(scope='all'):
                                 )
 
     # Missing Parameter File
-        if scope=='all' or scope=='parameter_file':
-            if selection_type == "PARAMETERFILE":
-                print()
-                if parameter_csv_filename:
-                    parameter_csv_file = utils.CSVFile(csv_filename=parameter_csv_filename, sep=parameter_csv_separator,colored=colored)
-                    parameter_csv_file.load()
+        if selection_type == "PARAMETERFILE":
+            print()
+            if parameter_csv_filename:
+                parameter_csv_file = utils.CSVFile(csv_filename=parameter_csv_filename, sep=parameter_csv_separator,colored=colored)
+                parameter_csv_file.load()
 
-                while not parameter_csv_filename or parameter_csv_file.content.empty:
-                    parameter_csv_filename = utils.FileName(colored=colored).ask_input_file("Parameter File with fields to hash/not hash: ")
-                    parameter_csv_file = utils.CSVFile(csv_filename=parameter_csv_filename, sep=parameter_csv_separator,colored=colored)
-                    parameter_csv_file.load()
+            while not parameter_csv_filename or parameter_csv_file.content.empty:
+                parameter_csv_filename = utils.FileName(colored=colored).ask_input_file("Parameter File with fields to hash/not hash: ")
+                parameter_csv_file = utils.CSVFile(csv_filename=parameter_csv_filename, sep=parameter_csv_separator,colored=colored)
+                parameter_csv_file.load()
 
-                if len(parameter_csv_file.content.columns) == 1:
-                    console.print_msg(severity="ERROR", msg=f"CSV File loaded contains only 1 column while 2 columns are required. Verify if CSV Separator '{parameter_csv_separator}' parameter is correct one.")
+            if len(parameter_csv_file.content.columns) == 1:
+                console.print_msg(severity="ERROR", msg=f"CSV File loaded contains only 1 column while 2 columns are required. Verify if CSV Separator '{parameter_csv_separator}' parameter is correct one.")
+                valid=False
+                exit()
+            elif len(parameter_csv_file.content.columns) > 2:
+                console.print_msg(severity="WARNING", msg=f"Parameter File contains more than 2 columns. Extra columns will be ignored. Verify if CSV Separator '{parameter_csv_separator}' parameter is correct one.")
+                if utils.Menu(colored=colored).menu_choice_YN("Do you want to process file") == "N":                
                     valid=False
-                    exit()
-                elif len(parameter_csv_file.content.columns) > 2:
-                    console.print_msg(severity="WARNING", msg=f"Parameter File contains more than 2 columns. Extra columns will be ignored. Verify if CSV Separator '{parameter_csv_separator}' parameter is correct one.")
-                    if utils.Menu(colored=colored).menu_choice_YN("Do you want to process file") == "N":                
-                        valid=False
-                    else:
-                        parameter_csv_file.content = parameter_csv_file.content.iloc[: , :2] # Keep only the 2 first columns (other considered as comment)
-                if valid:
-                    parameter_csv_file.content.columns = ["Fields", "Transform"]
-                    parameter_csv_file.content["Transform"] = parameter_csv_file.content["Transform"].str.upper().str[0]
-        
+                else:
+                    parameter_csv_file.content = parameter_csv_file.content.iloc[: , :2] # Keep only the 2 first columns (other considered as comment)
+            if valid:
+                parameter_csv_file.content.columns = ["Fields", "Transform"]
+                parameter_csv_file.content["Transform"] = parameter_csv_file.content["Transform"].str.upper().str[0]
+    
         # We need to have a column name extension if we want to keep original values
-        if scope=='all' or scope=='keep_original_values':
-            if keep_original_values: 
-                keep_column_name = False    # Force to change column name for transformed columns
-                if not output_name_ext_transform:
-                    output_name_ext_transform = algorithm
-        
-        if scope=="all" or scope=='keep_column_name':
-            if keep_column_name:
-                column_extension=""
+        if keep_original_values and keep_column_name:
+            keep_column_name = False    # Force to change column name for transformed columns
+            console.print_msg(severity="INFO", msg=f"keep_original_values=true => set keep_column_name=false")
 
         # We have to generate multiple chunk file if algorithm index
-        if algorithm=="index":
+        if algorithm=="index" and not chunk_output:
             chunk_output = True
+            console.print_msg(severity="INFO", msg=f"algorithm='index' => set chunk_output=true")
 
+        if  do_overview and not chunk_output:
+            console.print_msg(severity="INFO", msg=f"Note that Overiew file is chunked by default. This generate statistics PER CHUNK.")
+    
+        if keep_column_name:
+            column_extension=""
+    
     return valid
 
-def get_chunk_iterator(csv_file):
-    return csv_file.get_chunk_iterator(chunksize=chunk_size)
-
-def generate_filename(filename, filepath, subname, sep="_", timestamp=True, colored=True):
-    newfilename = utils.FileName(filename, colored=colored)
-    newfilename.add_subname(subname=subname, sep=sep)
-    if timestamp:
-        newfilename.add_datetime(sep=sep)
-    newfilename.change_filepath(new_filepath=filepath)
-    return newfilename
 
 ##############
 # Main program
@@ -304,7 +300,7 @@ if __name__ == "__main__":
     if validate_parameters():
         df_iterator = get_chunk_iterator(input_csv_file)
         for i, input_csv_file.content in enumerate(df_iterator):
-            print(f'\n--- Chunk {i}: lines {i*chunk_size+1}-{i*chunk_size + input_csv_file.content.shape[0]}')
+            print(f'\n--- Chunk {i+1}: lines {i*chunk_size+1}-{i*chunk_size + input_csv_file.content.shape[0]}')
             
             display_info = i == 0                               # Display info & add header only for the first chunk
             if not chunk_output and i>0:
@@ -320,7 +316,7 @@ if __name__ == "__main__":
                 if not input_csv_file.stat.empty:
                     overview_csv_filename = generate_filename(filename=input_csv_filename,
                         filepath=output_csv_location,
-                        subname=f"{output_name_ext_overview}{output_name_separator}chunk{i}",
+                        subname=f"{output_name_ext_overview}{output_name_separator}chunk{i+1}",
                         sep=output_name_separator,
                         timestamp=output_name_timestamp,
                         colored=True,
@@ -335,7 +331,7 @@ if __name__ == "__main__":
                     if chunk_output:
                         output_csv_filename = generate_filename(filename=input_csv_filename,
                                                 filepath=output_csv_location,
-                                                subname=f"{output_name_ext_transform}{output_name_separator}chunk{i}",
+                                                subname=f"{output_name_ext_transform}{output_name_separator}chunk{i+1}",
                                                 sep=output_name_separator,
                                                 timestamp=output_name_timestamp,
                                                 colored=True,
